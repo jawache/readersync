@@ -1,0 +1,282 @@
+# readersync
+
+A Python CLI tool to sync your Readwise Reader documents to local markdown files for use with Obsidian and other markdown-based tools.
+
+## Features
+
+- **Incremental sync** - Only fetches documents updated since last sync
+- **Full content extraction** - Downloads PDFs and converts web articles to clean markdown
+- **Highlights integration** - Automatically groups highlights with their parent documents
+- **Obsidian-friendly** - Generates markdown files with YAML frontmatter
+- **Chronological organization** - Filenames include dates for easy sorting
+- **Smart conversion** - Uses Microsoft's MarkItDown to convert HTML and PDFs to clean markdown
+
+## How It Works
+
+The tool connects to the Readwise Reader API to:
+1. Fetch all documents (articles, PDFs, etc.) updated since the last sync
+2. Download PDFs and extract their content
+3. Convert web articles from HTML to markdown
+4. Group highlights with their parent documents
+5. Generate markdown files with metadata and content
+
+### File Naming Convention
+
+Files are named for chronological sorting and unique identification:
+
+```
+YYYYMMDD-sanitized-title-READERID.md
+YYYYMMDD-sanitized-title-READERID.pdf  (for PDFs)
+```
+
+Example:
+```
+20241124-climate-change-computing-responsibility-01kavd87rsgpqbbjqmwzz4yhtm.md
+20241124-climate-change-computing-responsibility-01kavd87rsgpqbbjqmwzz4yhtm.pdf
+```
+
+- **Date**: When you saved the document to Reader (`saved_at` timestamp)
+- **Title**: Sanitized and truncated to 50-60 characters
+- **ID**: Readwise Reader document ID (ensures uniqueness)
+
+### Markdown File Format
+
+Each markdown file includes:
+
+```markdown
+---
+readwise_id: 01kavd87rsgpqbbjqmwzz4yhtm
+title: "Climate Change: What Is Computing's Responsibility?"
+author: "Author Name"
+url: "https://read.readwise.io/read/..."
+source_url: "https://original-source.com/article"
+category: pdf
+location: new
+tags:
+  - sustainability
+  - computing
+site_name: "dagstuhl.de"
+word_count: 7795
+reading_progress: 1.0
+created_at: "2025-11-24T17:05:46Z"
+saved_at: "2025-11-24T17:05:46Z"
+updated_at: "2025-11-24T22:56:05Z"
+---
+
+## Highlights
+
+> First highlight text here
+
+**Note:** My thoughts on this highlight
+
+> Second highlight text
+
+---
+
+## Content
+
+[Full article content converted to clean markdown]
+```
+
+## Installation
+
+### Prerequisites
+
+- Python 3.8 or higher
+- [uv](https://github.com/astral-sh/uv) (recommended) or pip
+
+### Setup
+
+**Recommended: Using uv (fast, automatic virtual environment)**
+
+[uv](https://github.com/astral-sh/uv) is a modern Python package manager (like pnpm/bun for Node). It's much faster and handles virtual environments automatically.
+
+1. Install uv if you don't have it:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+2. Clone or download this repository:
+```bash
+cd /path/to/readwise
+```
+
+3. Install the tool with uv:
+```bash
+uv pip install -e .
+```
+
+uv automatically creates and manages a virtual environment, keeping everything isolated.
+
+**Alternative: Using pip + venv**
+
+1. Clone or download this repository:
+```bash
+cd /path/to/readwise
+```
+
+2. Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install the tool:
+```bash
+pip install -e .
+```
+
+**Get your Readwise access token:**
+- Visit: https://readwise.io/access_token
+- Copy your access token
+
+## Usage
+
+If you used uv, you can run commands directly. If you used pip+venv, make sure your virtual environment is activated first (`source venv/bin/activate`).
+
+### Basic Sync
+
+Sync all documents to the current folder:
+
+```bash
+readersync --token YOUR_TOKEN
+```
+
+Or if you prefer to run without installing:
+```bash
+uv run readersync --token YOUR_TOKEN
+```
+
+Or specify a different folder:
+
+```bash
+readersync --folder ./my-readwise --token YOUR_TOKEN
+```
+
+Or set your token as an environment variable:
+
+```bash
+export READWISE_TOKEN=YOUR_TOKEN
+readersync
+```
+
+### Full Re-sync
+
+Ignore the last sync timestamp and re-sync everything:
+
+```bash
+readersync --full-sync
+```
+
+### Filter by Tag
+
+Sync only documents with a specific tag:
+
+```bash
+readersync --tag productivity
+```
+
+### Filter by Category
+
+Sync only specific document types (article, pdf, rss, etc.):
+
+```bash
+readersync --category pdf
+```
+
+### All Options
+
+```bash
+readersync --help
+
+Options:
+  --folder PATH       Output folder (defaults to current directory)
+  --token TEXT        Readwise access token (or set READWISE_TOKEN env var)
+  --full-sync         Ignore last sync timestamp and sync all documents
+  --tag TEXT          Filter by tag
+  --category TEXT     Filter by category (article, pdf, rss, etc.)
+  --help              Show this message and exit
+```
+
+## Sync State
+
+The tool maintains a `.last_sync` file in your output folder containing the ISO 8601 timestamp of the last successful sync. This enables incremental syncing - only fetching documents that have been added or updated since the last run.
+
+To force a full re-sync, either:
+- Delete the `.last_sync` file, or
+- Use the `--full-sync` flag
+
+## PDF Handling
+
+PDFs are handled specially:
+1. The original PDF is downloaded and saved (e.g., `YYYYMMDD-title-ID.pdf`)
+2. MarkItDown extracts the text content
+3. A markdown file is created with the extracted content (e.g., `YYYYMMDD-title-ID.md`)
+
+Both files are kept so you have the original PDF for reference and searchable markdown for text operations.
+
+## Rate Limits
+
+The Readwise Reader API has the following rate limits:
+- Standard endpoints: 20 requests/minute
+- Create/Update endpoints: 50 requests/minute
+
+The tool automatically handles pagination and respects these limits.
+
+## Project Structure
+
+```
+readwise/
+├── README.md                    # This file
+├── CLAUDE.md                    # Detailed implementation guide
+├── requirements.txt             # Python dependencies
+├── setup.py                     # Package setup (defines 'readersync' command)
+├── readersync/
+│   ├── __init__.py
+│   ├── cli.py                   # Command-line interface
+│   ├── api_client.py            # Readwise API wrapper
+│   ├── sync_manager.py          # Orchestrates sync process
+│   ├── document_processor.py    # Groups documents with highlights
+│   ├── markdown_generator.py    # Creates markdown files
+│   └── utils.py                 # Helper functions
+└── tests/                       # Unit tests
+```
+
+## Troubleshooting
+
+### PDFs Not Downloading
+
+PDFs are downloaded using pre-signed S3 URLs that expire after 1 hour. If you see 403 errors, the tool will automatically fetch fresh URLs.
+
+### Missing Content
+
+Some documents may not have full content available:
+- Web pages that can't be parsed
+- Restricted or paywalled content
+- Documents that are just links/bookmarks
+
+In these cases, the markdown file will include available metadata and any highlights.
+
+### File Name Conflicts
+
+File names are unique due to the Readwise ID suffix. If you manually rename files, the tool won't be able to update them - it will create new files with the correct naming convention.
+
+## Contributing
+
+This is a proof-of-concept tool for personal use. Contributions and suggestions are welcome!
+
+## License
+
+MIT License - feel free to modify and use for your own purposes.
+
+## Related Projects
+
+- [Readwise](https://readwise.io/) - Highlight management service
+- [Readwise Reader](https://readwise.io/read) - Read-it-later app
+- [MarkItDown](https://github.com/microsoft/markitdown) - Microsoft's document converter
+- [Obsidian](https://obsidian.md/) - Markdown-based knowledge base
+
+## API Documentation
+
+- [Readwise Reader API](https://readwise.io/reader_api)
+- [Get your access token](https://readwise.io/access_token)

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "readersync"
+version = "0.1.0"
+description = "Sync Readwise Reader documents to local markdown files"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "requests>=2.31.0",
+    "markitdown[all]>=0.0.1",
+    "python-dateutil>=2.8.2",
+    "click>=8.1.0",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+readersync = "readersync.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/readersync"
+Repository = "https://github.com/yourusername/readersync"
+Issues = "https://github.com/yourusername/readersync/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["readersync*"]
+exclude = ["tests*"]
