@@ -1,6 +1,7 @@
 """Document processing logic."""
 
 import os
+import re
 import tempfile
 from typing import List, Dict, Tuple, Optional
 from markitdown import MarkItDown
@@ -61,6 +62,13 @@ def extract_content_from_html(html_content: str) -> Optional[str]:
         Markdown content or None
     """
     try:
+        # Pre-process HTML to fix spacing issues
+        # Add <br> tags before all closing tags to force line breaks
+        # This is especially important for video transcripts where inline elements
+        # can cause words to be mushed together when tags are stripped
+        # It's okay to have extra line breaks - better than concatenated words
+        html_content = re.sub(r'</(\w+)>', r'<br></\1>', html_content)
+
         # MarkItDown expects file paths, so we need to write to a temp file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
             f.write(html_content)
@@ -80,18 +88,19 @@ def extract_content_from_html(html_content: str) -> Optional[str]:
         return None
 
 
-def extract_content(document: Dict, output_folder: str, api_client) -> Optional[str]:
+def extract_content(document: Dict, output_folder: str, api_client, flat: bool = False) -> Optional[str]:
     """Extract document content based on category.
 
     Args:
         document: Document dictionary from API
         output_folder: Folder to save PDFs
         api_client: API client for downloading files
+        flat: If True, save files in flat structure (no category subfolders)
 
     Returns:
         Extracted markdown content or None
     """
-    from .utils import generate_filename
+    from .utils import generate_filename, get_category_folder
 
     category = document.get('category', 'article')
     doc_id = document.get('id', 'unknown')
@@ -117,7 +126,9 @@ def extract_content(document: Dict, output_folder: str, api_client) -> Optional[
 
             if raw_url:
                 pdf_filename = generate_filename(document, '.pdf')
-                pdf_path = os.path.join(output_folder, pdf_filename)
+                category_folder = get_category_folder(output_folder, category, flat)
+                os.makedirs(category_folder, exist_ok=True)
+                pdf_path = os.path.join(category_folder, pdf_filename)
                 print(f"  Downloading original PDF to {pdf_filename}")
                 api_client.download_file(raw_url, pdf_path)
 
@@ -132,7 +143,9 @@ def extract_content(document: Dict, output_folder: str, api_client) -> Optional[
 
             if raw_url:
                 pdf_filename = generate_filename(document, '.pdf')
-                pdf_path = os.path.join(output_folder, pdf_filename)
+                category_folder = get_category_folder(output_folder, category, flat)
+                os.makedirs(category_folder, exist_ok=True)
+                pdf_path = os.path.join(category_folder, pdf_filename)
                 print(f"  Downloading PDF to {pdf_filename}")
                 success = api_client.download_file(raw_url, pdf_path)
 

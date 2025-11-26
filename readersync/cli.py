@@ -36,7 +36,12 @@ load_dotenv()
     '--category',
     help='Filter documents by category (article, pdf, rss, etc.)'
 )
-def main(folder, token, full_sync, tag, category):
+@click.option(
+    '--flat',
+    is_flag=True,
+    help='Save all files in flat structure (no category subfolders)'
+)
+def main(folder, token, full_sync, tag, category, flat):
     """Sync Readwise Reader documents to local markdown files.
 
     This tool downloads your Readwise Reader documents and converts them
@@ -72,7 +77,8 @@ def main(folder, token, full_sync, tag, category):
             folder=folder,
             full_sync=full_sync,
             tag=tag,
-            category=category
+            category=category,
+            flat=flat
         )
     except KeyboardInterrupt:
         print("\n\nSync interrupted by user.")

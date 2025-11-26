@@ -1,5 +1,6 @@
 """Utility functions for readersync."""
 
+import os
 import re
 from datetime import datetime
 from dateutil import parser as date_parser
@@ -100,3 +101,33 @@ def extract_readwise_id_from_filename(filename):
     if parts:
         return parts[-1]
     return None
+
+
+def get_category_folder(base_folder, category, use_flat=False):
+    """Get the output folder for a document based on its category.
+
+    Args:
+        base_folder: Base output folder
+        category: Document category (article, pdf, video, etc.)
+        use_flat: If True, return base_folder (flat structure)
+
+    Returns:
+        Full path to category subfolder or base_folder if flat
+    """
+    if use_flat:
+        return base_folder
+
+    # Map categories to folder names (pluralized for clarity)
+    category_folders = {
+        'article': 'articles',
+        'pdf': 'pdfs',
+        'video': 'videos',
+        'rss': 'rss',
+        'epub': 'books',
+        'tweet': 'tweets',
+        'email': 'emails',
+        'podcast': 'podcasts',
+    }
+
+    subfolder = category_folders.get(category, 'other')
+    return os.path.join(base_folder, subfolder)

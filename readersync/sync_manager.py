@@ -44,7 +44,7 @@ def write_last_sync(folder: str, timestamp: Optional[str] = None):
         timestamp: ISO 8601 timestamp (defaults to now)
     """
     if timestamp is None:
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
 
     sync_file = os.path.join(folder, LAST_SYNC_FILE)
 
@@ -61,7 +61,8 @@ def sync(
     folder: str,
     full_sync: bool = False,
     tag: Optional[str] = None,
-    category: Optional[str] = None
+    category: Optional[str] = None,
+    flat: bool = False
 ):
     """Perform sync of Readwise Reader documents.
 
@@ -71,6 +72,7 @@ def sync(
         full_sync: If True, ignore last sync and fetch all documents
         tag: Optional tag filter
         category: Optional category filter
+        flat: If True, save files in flat structure (no category subfolders)
     """
     print("=" * 60)
     print("Starting readersync")
@@ -143,10 +145,10 @@ def sync(
                 print(f"  Found {len(doc_highlights)} highlights")
 
             # Extract content
-            content = extract_content(doc, folder, api_client)
+            content = extract_content(doc, folder, api_client, flat)
 
             # Generate markdown file
-            filepath = generate_markdown(doc, doc_highlights, content, folder)
+            filepath = generate_markdown(doc, doc_highlights, content, folder, flat)
             processed_count += 1
 
         except Exception as e:

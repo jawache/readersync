@@ -5,6 +5,49 @@ import yaml
 from typing import List, Dict, Optional
 
 
+def clean_datetime(datetime_str: Optional[str]) -> Optional[str]:
+    """Remove microseconds and timezone from datetime string.
+
+    Args:
+        datetime_str: ISO 8601 datetime string
+
+    Returns:
+        Cleaned datetime string in format YYYY-MM-DDTHH:MM:SS or None
+    """
+    if not datetime_str:
+        return None
+
+    # Remove microseconds and timezone
+    # Handles formats like:
+    # - 2025-11-24T17:05:46.123456Z -> 2025-11-24T17:05:46
+    # - 2025-11-24T17:05:46+00:00 -> 2025-11-24T17:05:46
+    # - 2025-11-24T17:05:46Z -> 2025-11-24T17:05:46
+
+    # Split on 'T' to separate date and time
+    if 'T' not in datetime_str:
+        return datetime_str
+
+    date_part, time_part = datetime_str.split('T', 1)
+
+    # Remove microseconds (everything after the dot)
+    if '.' in time_part:
+        time_part = time_part.split('.', 1)[0]
+
+    # Remove timezone (Z or +/-offset)
+    if 'Z' in time_part:
+        time_part = time_part.split('Z', 1)[0]
+    elif '+' in time_part:
+        time_part = time_part.split('+', 1)[0]
+    elif time_part.count('-') > 0:
+        # Be careful - time might have HH-MM-SS format (shouldn't, but be safe)
+        # Only remove timezone offset like -05:00, not part of time
+        parts = time_part.split('-')
+        if len(parts) > 1 and ':' in parts[-1]:
+            time_part = '-'.join(parts[:-1])
+
+    return f"{date_part}T{time_part}"
+
+
 def generate_frontmatter(document: Dict) -> str:
     """Generate YAML frontmatter from document metadata.
 
@@ -14,6 +57,16 @@ def generate_frontmatter(document: Dict) -> str:
     Returns:
         YAML frontmatter as string
     """
+    # Get cleaned saved_at for reuse
+    saved_at_clean = clean_datetime(document.get('saved_at'))
+
+    # Extract date component from saved_at (YYYY-MM-DD)
+    date_only = None
+    if saved_at_clean and 'T' in saved_at_clean:
+        date_only = saved_at_clean.split('T')[0]
+    elif saved_at_clean:
+        date_only = saved_at_clean
+
     # Extract relevant fields
     metadata = {
         'readwise_id': document.get('id'),
@@ -27,10 +80,12 @@ def generate_frontmatter(document: Dict) -> str:
         'site_name': document.get('site_name'),
         'word_count': document.get('word_count'),
         'reading_progress': document.get('reading_progress'),
-        'created_at': document.get('created_at'),
-        'saved_at': document.get('saved_at'),
-        'updated_at': document.get('updated_at'),
-        'published_date': document.get('published_date'),
+        'cover': document.get('image_url'),
+        'date': date_only,
+        'created_at': clean_datetime(document.get('created_at')),
+        'saved_at': saved_at_clean,
+        'updated_at': clean_datetime(document.get('updated_at')),
+        'published_date': clean_datetime(document.get('published_date')),
         'summary': document.get('summary'),
     }
 
@@ -87,7 +142,8 @@ def generate_markdown(
     document: Dict,
     highlights: List[Dict],
     content: Optional[str],
-    output_folder: str
+    output_folder: str,
+    flat: bool = False
 ) -> str:
     """Generate complete markdown file.
 
@@ -96,11 +152,12 @@ def generate_markdown(
         highlights: List of highlight documents
         content: Extracted content (or None)
         output_folder: Folder to save markdown file
+        flat: If True, save files in flat structure (no category subfolders)
 
     Returns:
         Path to generated markdown file
     """
-    from .utils import generate_filename
+    from .utils import generate_filename, get_category_folder
 
     # Generate frontmatter
     frontmatter = generate_frontmatter(document)
@@ -128,9 +185,12 @@ def generate_markdown(
     # Combine all parts
     full_markdown = "\n".join(markdown_parts)
 
-    # Generate filename
+    # Generate filename and determine output folder
     filename = generate_filename(document, '.md')
-    filepath = os.path.join(output_folder, filename)
+    category = document.get('category', 'article')
+    category_folder = get_category_folder(output_folder, category, flat)
+    os.makedirs(category_folder, exist_ok=True)
+    filepath = os.path.join(category_folder, filename)
 
     # Write to file
     with open(filepath, 'w', encoding='utf-8') as f:
