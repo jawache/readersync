@@ -82,7 +82,7 @@ updated_at: "2025-11-24T22:56:05Z"
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
 
 ### Setup
@@ -130,34 +130,51 @@ pip install -e .
 - Visit: https://readwise.io/access_token
 - Copy your access token
 
+**Setup environment variables (recommended):**
+
+Create a `.env` file in the project root:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your token:
+
+```
+READWISE_TOKEN=your_actual_token_here
+```
+
+The `.env` file is gitignored so your token stays private.
+
 ## Usage
 
 If you used uv, you can run commands directly. If you used pip+venv, make sure your virtual environment is activated first (`source venv/bin/activate`).
 
 ### Basic Sync
 
-Sync all documents to the current folder:
+With `.env` file (recommended):
+
+```bash
+readersync
+```
+
+Or pass token directly:
 
 ```bash
 readersync --token YOUR_TOKEN
 ```
 
-Or if you prefer to run without installing:
-```bash
-uv run readersync --token YOUR_TOKEN
-```
-
-Or specify a different folder:
-
-```bash
-readersync --folder ./my-readwise --token YOUR_TOKEN
-```
-
-Or set your token as an environment variable:
+Or use environment variable:
 
 ```bash
 export READWISE_TOKEN=YOUR_TOKEN
 readersync
+```
+
+Specify a different folder:
+
+```bash
+readersync --folder ./my-obsidian-vault
 ```
 
 ### Full Re-sync

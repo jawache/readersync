@@ -2,7 +2,12 @@
 
 import click
 import sys
+import os
+from dotenv import load_dotenv
 from .sync_manager import sync
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 @click.command()

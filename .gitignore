@@ -59,5 +59,6 @@ test_output/
 
 # Secrets
 .env
+.env.local
 *.token
 config.json

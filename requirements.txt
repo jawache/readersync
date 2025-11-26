@@ -3,3 +3,4 @@ markitdown[all]>=0.0.1
 python-dateutil>=2.8.2
 click>=8.1.0
 pyyaml>=6.0
+python-dotenv>=1.0.0
