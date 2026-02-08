@@ -8,7 +8,9 @@ A Python CLI tool to sync your Readwise Reader documents to local markdown files
 - **Full content extraction** - Downloads PDFs and converts web articles to clean markdown
 - **Highlights integration** - Automatically groups highlights with their parent documents
 - **Obsidian-friendly** - Generates markdown files with YAML frontmatter
-- **Chronological organization** - Filenames include dates for easy sorting
+- **Chronological organisation** - Filenames include dates for easy sorting
+- **Configurable filenames** - Customise the filename format with `{date}`, `{title}`, `{id}` placeholders
+- **Location filtering** - Sync only documents from specific locations (new, later, archive, etc.)
 - **Smart conversion** - Uses Microsoft's MarkItDown to convert HTML and PDFs to clean markdown
 
 ## How It Works
@@ -58,22 +60,25 @@ tags:
 site_name: "dagstuhl.de"
 word_count: 7795
 reading_progress: 1.0
-created_at: "2025-11-24T17:05:46Z"
-saved_at: "2025-11-24T17:05:46Z"
-updated_at: "2025-11-24T22:56:05Z"
+cover: "https://..."
+date: "2025-11-24"
+created_at: "2025-11-24T17:05:46"
+saved_at: "2025-11-24T17:05:46"
+updated_at: "2025-11-24T22:56:05"
+summary: "Brief summary of the document..."
 ---
 
-## Highlights
-
+> [!highlight] My thoughts on this highlight
 > First highlight text here
+>
+> ✏️ 2025-11-24 | 🔗 [View in Readwise](https://read.readwise.io/read/...)
 
-**Note:** My thoughts on this highlight
-
+> [!highlight]
 > Second highlight text
+>
+> ✏️ 2025-11-24 | 🔗 [View in Readwise](https://read.readwise.io/read/...)
 
 ---
-
-## Content
 
 [Full article content converted to clean markdown]
 ```
@@ -201,18 +206,51 @@ Sync only specific document types (article, pdf, rss, etc.):
 readersync --category pdf
 ```
 
+### Filter by Location
+
+Sync only documents from a specific location:
+
+```bash
+readersync --location archive
+readersync --location new
+```
+
+Valid locations: `new`, `later`, `shortlist`, `archive`, `feed`.
+
+### Custom Filename Format
+
+Change the filename format using placeholders (`{id}` is always required):
+
+```bash
+readersync --filename-format "{title}-{id}"
+readersync --filename-format "{id}-{title}"
+readersync --filename-format "{date}-{id}-{title}"
+```
+
+### Flat Structure
+
+Save all files in the output folder without category subfolders:
+
+```bash
+readersync --flat
+```
+
 ### All Options
 
 ```bash
 readersync --help
 
 Options:
-  --folder PATH       Output folder (defaults to current directory)
-  --token TEXT        Readwise access token (or set READWISE_TOKEN env var)
-  --full-sync         Ignore last sync timestamp and sync all documents
-  --tag TEXT          Filter by tag
-  --category TEXT     Filter by category (article, pdf, rss, etc.)
-  --help              Show this message and exit
+  --folder PATH              Output folder (defaults to current directory)
+  --token TEXT                Readwise access token (or set READWISE_TOKEN env var)
+  --full-sync                 Ignore last sync timestamp and sync all documents
+  --tag TEXT                  Filter by tag
+  --category TEXT             Filter by category (article, pdf, rss, etc.)
+  --location [new|later|shortlist|archive|feed]
+                              Filter by location
+  --flat                      Save all files without category subfolders
+  --filename-format TEXT      Filename format (default: {date}-{title}-{id})
+  --help                      Show this message and exit
 ```
 
 ## Sync State

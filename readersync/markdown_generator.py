@@ -123,6 +123,7 @@ def generate_highlights_section(highlights: List[Dict]) -> str:
         notes = highlight.get('notes', '')
         tags = highlight.get('tags', {})
         url = highlight.get('url', '')
+        created_at = clean_datetime(highlight.get('created_at'))
 
         # Open the callout - use note as title if present
         if notes:
@@ -143,10 +144,16 @@ def generate_highlights_section(highlights: List[Dict]) -> str:
             lines.append(">")
             lines.append(f"> **Tags:** {tag_list}")
 
-        # Add reference link inside the callout
+        # Add footer with date and reference link
+        footer_parts = []
+        if created_at:
+            date_only = created_at.split('T')[0] if 'T' in created_at else created_at
+            footer_parts.append(f"✏️ {date_only}")
         if url:
+            footer_parts.append(f"🔗 [View in Readwise]({url})")
+        if footer_parts:
             lines.append(">")
-            lines.append(f"> [View in Readwise]({url})")
+            lines.append(f"> {' | '.join(footer_parts)}")
 
         lines.append("")  # Empty line between highlights
 
