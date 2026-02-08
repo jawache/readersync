@@ -40,6 +40,7 @@ class ReadwiseAPIClient:
         updated_after: Optional[str] = None,
         tag: Optional[str] = None,
         category: Optional[str] = None,
+        location: Optional[str] = None,
         document_id: Optional[str] = None
     ) -> List[Dict]:
         """Fetch documents from API with pagination.
@@ -48,6 +49,7 @@ class ReadwiseAPIClient:
             updated_after: ISO 8601 timestamp for incremental sync
             tag: Filter by tag
             category: Filter by category
+            location: Filter by location (new, later, shortlist, archive, feed)
             document_id: Get specific document by ID
 
         Returns:
@@ -64,6 +66,8 @@ class ReadwiseAPIClient:
             params['tag'] = tag
         if category:
             params['category'] = category
+        if location:
+            params['location'] = location
         if document_id:
             params['id'] = document_id
 

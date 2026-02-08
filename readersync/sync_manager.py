@@ -62,6 +62,7 @@ def sync(
     full_sync: bool = False,
     tag: Optional[str] = None,
     category: Optional[str] = None,
+    location: Optional[str] = None,
     flat: bool = False,
     filename_format: Optional[str] = None
 ):
@@ -73,6 +74,7 @@ def sync(
         full_sync: If True, ignore last sync and fetch all documents
         tag: Optional tag filter
         category: Optional category filter
+        location: Optional location filter (new, later, shortlist, archive, feed)
         flat: If True, save files in flat structure (no category subfolders)
         filename_format: Optional filename format template
     """
@@ -112,7 +114,8 @@ def sync(
     documents = api_client.list_documents(
         updated_after=updated_after,
         tag=tag,
-        category=category
+        category=category,
+        location=location
     )
 
     if not documents:
@@ -121,6 +124,14 @@ def sync(
         return
 
     print(f"\n{len(documents)} documents to process")
+
+    # Show location breakdown
+    from collections import Counter
+    location_counts = Counter(doc.get('location', 'unknown') for doc in documents if not doc.get('parent_id'))
+    if location_counts:
+        print("Location breakdown (parent documents only):")
+        for loc, count in sorted(location_counts.items()):
+            print(f"  {loc}: {count}")
 
     # Group documents (parents vs highlights)
     print("\nGrouping documents...")

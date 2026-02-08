@@ -93,7 +93,9 @@ def generate_frontmatter(document: Dict) -> str:
     metadata = {k: v for k, v in metadata.items() if v is not None}
 
     # Convert to YAML
-    yaml_str = yaml.dump(metadata, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    # width=10000 prevents PyYAML from wrapping long strings across multiple lines,
+    # which breaks Obsidian's frontmatter parser
+    yaml_str = yaml.dump(metadata, default_flow_style=False, allow_unicode=True, sort_keys=False, width=10000)
 
     return f"---\n{yaml_str}---\n"
 
@@ -115,23 +117,36 @@ def generate_highlights_section(highlights: List[Dict]) -> str:
     for highlight in highlights:
         # Get the content field which contains the highlighted text
         text = highlight.get('content', '')
-        if text:
-            # Format as blockquote, handling multi-line highlights
-            for line in text.strip().split('\n'):
-                if line.strip():
-                    lines.append(f"> {line}")
-            lines.append("")  # Empty line after quote
+        if not text:
+            continue
 
-        # Add any notes
         notes = highlight.get('notes', '')
-        if notes:
-            lines.append(f"**Note:** {notes}\n")
-
-        # Add tags if any
         tags = highlight.get('tags', {})
+        url = highlight.get('url', '')
+
+        # Open the callout - use note as title if present
+        if notes:
+            lines.append(f"> [!highlight] {notes}")
+        else:
+            lines.append("> [!highlight]")
+
+        # Add all text lines with > prefix, including blank lines
+        for line in text.strip().split('\n'):
+            if line.strip():
+                lines.append(f"> {line}")
+            else:
+                lines.append(">")
+
+        # Add tags inside the callout
         if tags:
             tag_list = ', '.join(tags.keys())
-            lines.append(f"**Tags:** {tag_list}\n")
+            lines.append(">")
+            lines.append(f"> **Tags:** {tag_list}")
+
+        # Add reference link inside the callout
+        if url:
+            lines.append(">")
+            lines.append(f"> [View in Readwise]({url})")
 
         lines.append("")  # Empty line between highlights
 
@@ -165,27 +180,23 @@ def generate_markdown(
     frontmatter = generate_frontmatter(document)
 
     # Start building markdown
-    markdown_parts = [frontmatter]
+    markdown_parts = [frontmatter.rstrip('\n')]
 
-    # Add highlights section if any
+    # Add highlights as Obsidian callouts
     if highlights:
         highlights_md = generate_highlights_section(highlights)
         if highlights_md:
-            markdown_parts.append("## Highlights\n")
-            markdown_parts.append(highlights_md)
-            markdown_parts.append("---\n")
+            markdown_parts.append(highlights_md.rstrip('\n'))
+            markdown_parts.append("---")
 
-    # Add content section
+    # Add content directly (no heading - let the article's own headings stand)
     if content:
-        markdown_parts.append("## Content\n")
-        markdown_parts.append(content)
+        markdown_parts.append(content.rstrip('\n'))
     else:
-        # No content available, just add a note
-        markdown_parts.append("## Content\n")
-        markdown_parts.append("*No content available for this document.*\n")
+        markdown_parts.append("*No content available for this document.*")
 
-    # Combine all parts
-    full_markdown = "\n".join(markdown_parts)
+    # Combine with exactly one blank line between each part
+    full_markdown = "\n\n".join(markdown_parts) + "\n"
 
     # Generate filename and determine output folder
     filename = generate_filename(document, '.md', fmt=filename_format)

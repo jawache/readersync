@@ -37,6 +37,11 @@ load_dotenv()
     help='Filter documents by category (article, pdf, rss, etc.)'
 )
 @click.option(
+    '--location',
+    type=click.Choice(['new', 'later', 'shortlist', 'archive', 'feed'], case_sensitive=False),
+    help='Filter documents by location (new, later, shortlist, archive, feed)'
+)
+@click.option(
     '--flat',
     is_flag=True,
     help='Save all files in flat structure (no category subfolders)'
@@ -47,7 +52,7 @@ load_dotenv()
     help='Filename format template. Placeholders: {date}, {title}, {id}. '
          '{id} is required. Default: {date}-{title}-{id}'
 )
-def main(folder, token, full_sync, tag, category, flat, filename_format):
+def main(folder, token, full_sync, tag, category, location, flat, filename_format):
     """Sync Readwise Reader documents to local markdown files.
 
     This tool downloads your Readwise Reader documents and converts them
@@ -93,6 +98,7 @@ def main(folder, token, full_sync, tag, category, flat, filename_format):
             full_sync=full_sync,
             tag=tag,
             category=category,
+            location=location,
             flat=flat,
             filename_format=filename_format
         )
