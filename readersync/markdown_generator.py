@@ -143,7 +143,8 @@ def generate_markdown(
     highlights: List[Dict],
     content: Optional[str],
     output_folder: str,
-    flat: bool = False
+    flat: bool = False,
+    filename_format: Optional[str] = None
 ) -> str:
     """Generate complete markdown file.
 
@@ -153,6 +154,7 @@ def generate_markdown(
         content: Extracted content (or None)
         output_folder: Folder to save markdown file
         flat: If True, save files in flat structure (no category subfolders)
+        filename_format: Optional filename format template
 
     Returns:
         Path to generated markdown file
@@ -186,7 +188,7 @@ def generate_markdown(
     full_markdown = "\n".join(markdown_parts)
 
     # Generate filename and determine output folder
-    filename = generate_filename(document, '.md')
+    filename = generate_filename(document, '.md', fmt=filename_format)
     category = document.get('category', 'article')
     category_folder = get_category_folder(output_folder, category, flat)
     os.makedirs(category_folder, exist_ok=True)

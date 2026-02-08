@@ -41,7 +41,13 @@ load_dotenv()
     is_flag=True,
     help='Save all files in flat structure (no category subfolders)'
 )
-def main(folder, token, full_sync, tag, category, flat):
+@click.option(
+    '--filename-format',
+    default=None,
+    help='Filename format template. Placeholders: {date}, {title}, {id}. '
+         '{id} is required. Default: {date}-{title}-{id}'
+)
+def main(folder, token, full_sync, tag, category, flat, filename_format):
     """Sync Readwise Reader documents to local markdown files.
 
     This tool downloads your Readwise Reader documents and converts them
@@ -71,6 +77,15 @@ def main(folder, token, full_sync, tag, category, flat):
         # Sync only PDFs
         readersync --category pdf
     """
+    # Validate filename format if provided
+    if filename_format:
+        from .utils import validate_filename_format
+        try:
+            validate_filename_format(filename_format)
+        except ValueError as e:
+            print(f"ERROR: {e}")
+            sys.exit(1)
+
     try:
         sync(
             token=token,
@@ -78,7 +93,8 @@ def main(folder, token, full_sync, tag, category, flat):
             full_sync=full_sync,
             tag=tag,
             category=category,
-            flat=flat
+            flat=flat,
+            filename_format=filename_format
         )
     except KeyboardInterrupt:
         print("\n\nSync interrupted by user.")

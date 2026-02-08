@@ -6,6 +6,11 @@ from datetime import datetime
 from dateutil import parser as date_parser
 
 
+DEFAULT_FILENAME_FORMAT = "{date}-{title}-{id}"
+
+VALID_PLACEHOLDERS = {'date', 'title', 'id'}
+
+
 def parse_iso8601(date_string):
     """Parse ISO 8601 date string to datetime object.
 
@@ -53,18 +58,56 @@ def sanitize_title(title, max_length=60):
     return title
 
 
-def generate_filename(document, extension=".md"):
-    """Generate filename from document data.
+def validate_filename_format(fmt):
+    """Validate a filename format string.
 
-    Format: YYYYMMDD-sanitized-title-READERID.ext
+    Args:
+        fmt: Format string with {date}, {title}, {id} placeholders
+
+    Returns:
+        True if valid
+
+    Raises:
+        ValueError: If format is invalid
+    """
+    if '{id}' not in fmt:
+        raise ValueError(
+            f"Filename format must contain {{id}} placeholder. Got: {fmt}"
+        )
+
+    # Check for unknown placeholders
+    used = set(re.findall(r'\{(\w+)\}', fmt))
+    unknown = used - VALID_PLACEHOLDERS
+    if unknown:
+        raise ValueError(
+            f"Unknown placeholders: {{{', '.join(unknown)}}}. "
+            f"Valid placeholders: {{{', '.join(sorted(VALID_PLACEHOLDERS))}}}"
+        )
+
+    if len(used) < 2:
+        raise ValueError(
+            "Filename format must contain at least two placeholders "
+            "(a filename of just an ID is unhelpful)"
+        )
+
+    return True
+
+
+def generate_filename(document, extension=".md", fmt=None):
+    """Generate filename from document data.
 
     Args:
         document: Document dictionary from API
         extension: File extension (default: .md)
+        fmt: Format string with {date}, {title}, {id} placeholders.
+             Defaults to DEFAULT_FILENAME_FORMAT.
 
     Returns:
         Generated filename
     """
+    if fmt is None:
+        fmt = DEFAULT_FILENAME_FORMAT
+
     # Get date from saved_at
     saved_at = document.get('saved_at')
     if saved_at:
@@ -81,25 +124,30 @@ def generate_filename(document, extension=".md"):
     # Get Readwise ID
     readwise_id = document['id']
 
-    return f"{date_prefix}-{sanitized}-{readwise_id}{extension}"
+    name = fmt.format(date=date_prefix, title=sanitized, id=readwise_id)
+    return f"{name}{extension}"
 
 
-def extract_readwise_id_from_filename(filename):
-    """Extract Readwise ID from filename.
+def find_existing_file(folder, readwise_id, extension=".md"):
+    """Find an existing file for a Readwise document by its ID.
+
+    Searches for files containing the readwise_id in their filename,
+    regardless of the filename format used.
 
     Args:
-        filename: Filename in format YYYYMMDD-title-ID.ext
+        folder: Folder to search in
+        readwise_id: Readwise document ID to search for
 
     Returns:
-        Readwise ID or None if not found
+        Full path to existing file, or None if not found
     """
-    # Remove extension
-    name_without_ext = filename.rsplit('.', 1)[0]
+    if not os.path.isdir(folder):
+        return None
 
-    # Split by hyphen and get last part (the ID)
-    parts = name_without_ext.split('-')
-    if parts:
-        return parts[-1]
+    for filename in os.listdir(folder):
+        if readwise_id in filename and filename.endswith(extension):
+            return os.path.join(folder, filename)
+
     return None
 
 

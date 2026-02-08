@@ -88,7 +88,7 @@ def extract_content_from_html(html_content: str) -> Optional[str]:
         return None
 
 
-def extract_content(document: Dict, output_folder: str, api_client, flat: bool = False) -> Optional[str]:
+def extract_content(document: Dict, output_folder: str, api_client, flat: bool = False, filename_format: Optional[str] = None) -> Optional[str]:
     """Extract document content based on category.
 
     Args:
@@ -96,6 +96,7 @@ def extract_content(document: Dict, output_folder: str, api_client, flat: bool =
         output_folder: Folder to save PDFs
         api_client: API client for downloading files
         flat: If True, save files in flat structure (no category subfolders)
+        filename_format: Optional filename format template
 
     Returns:
         Extracted markdown content or None
@@ -125,7 +126,7 @@ def extract_content(document: Dict, output_folder: str, api_client, flat: bool =
                     raw_url = None
 
             if raw_url:
-                pdf_filename = generate_filename(document, '.pdf')
+                pdf_filename = generate_filename(document, '.pdf', fmt=filename_format)
                 category_folder = get_category_folder(output_folder, category, flat)
                 os.makedirs(category_folder, exist_ok=True)
                 pdf_path = os.path.join(category_folder, pdf_filename)
@@ -142,7 +143,7 @@ def extract_content(document: Dict, output_folder: str, api_client, flat: bool =
                     raw_url = None
 
             if raw_url:
-                pdf_filename = generate_filename(document, '.pdf')
+                pdf_filename = generate_filename(document, '.pdf', fmt=filename_format)
                 category_folder = get_category_folder(output_folder, category, flat)
                 os.makedirs(category_folder, exist_ok=True)
                 pdf_path = os.path.join(category_folder, pdf_filename)

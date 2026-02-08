@@ -62,7 +62,8 @@ def sync(
     full_sync: bool = False,
     tag: Optional[str] = None,
     category: Optional[str] = None,
-    flat: bool = False
+    flat: bool = False,
+    filename_format: Optional[str] = None
 ):
     """Perform sync of Readwise Reader documents.
 
@@ -73,6 +74,7 @@ def sync(
         tag: Optional tag filter
         category: Optional category filter
         flat: If True, save files in flat structure (no category subfolders)
+        filename_format: Optional filename format template
     """
     print("=" * 60)
     print("Starting readersync")
@@ -145,10 +147,10 @@ def sync(
                 print(f"  Found {len(doc_highlights)} highlights")
 
             # Extract content
-            content = extract_content(doc, folder, api_client, flat)
+            content = extract_content(doc, folder, api_client, flat, filename_format)
 
             # Generate markdown file
-            filepath = generate_markdown(doc, doc_highlights, content, folder, flat)
+            filepath = generate_markdown(doc, doc_highlights, content, folder, flat, filename_format)
             processed_count += 1
 
         except Exception as e:
