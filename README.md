@@ -278,6 +278,45 @@ In these cases, the markdown file will include available metadata and any highli
 
 File names are unique due to the Readwise ID suffix. If you manually rename files, the tool won't be able to update them - it will create new files with the correct naming convention.
 
+## Obsidian Integration
+
+Rather than running readersync manually, you can automate it from within Obsidian using two community plugins.
+
+### Setup
+
+1. **Install readersync globally** so it's available on your PATH:
+
+   ```bash
+   # If developing locally
+   uv tool install -e /path/to/readwise
+
+   # Or for end users
+   pipx install readersync
+   ```
+
+2. **Install the [Shell Commands](https://github.com/Taitava/obsidian-shellcommands) plugin** in Obsidian. Define a new shell command:
+
+   ```bash
+   readersync --folder {{vault_path}}/Readwise
+   ```
+
+   For the token, either:
+   - Set `READWISE_TOKEN` in your shell profile (`~/.zshrc`, `~/.bashrc`), or
+   - Place a `.env` file in the output folder, or
+   - Hardcode it: `readersync --folder {{vault_path}}/Readwise --token YOUR_TOKEN`
+
+3. **Install the [Cron](https://github.com/cdloh/obsidian-cron) plugin** in Obsidian. Create a scheduled job pointing at the shell command you defined, e.g. every 30 minutes (`*/30 * * * *`) or once an hour (`0 * * * *`).
+
+### How It Works
+
+Obsidian Cron triggers Obsidian commands on a schedule. Shell Commands registers your `readersync` invocation as an Obsidian command. Together, they run the sync automatically in the background. Since Obsidian watches the filesystem, new and updated markdown files appear in your vault immediately after each sync completes.
+
+### Why Not a Native Obsidian Plugin?
+
+We considered rewriting readersync as an Obsidian plugin (TypeScript), but the main barrier is PDF text extraction. Obsidian plugins run in Electron/Node.js where there's no equivalent to Python's MarkItDown for high-quality PDF-to-markdown conversion. The JavaScript PDF libraries (`pdf-parse`, `pdf.js`) produce noticeably worse results on complex documents.
+
+Keeping readersync as a Python CLI and triggering it from Obsidian gives you the best of both worlds: full PDF extraction quality and seamless vault integration.
+
 ## Contributing
 
 This is a proof-of-concept tool for personal use. Contributions and suggestions are welcome!
