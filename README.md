@@ -12,6 +12,7 @@ A Python CLI tool to sync your Readwise Reader documents to local markdown files
 - **Configurable filenames** - Customise the filename format with `{date}`, `{title}`, `{id}` placeholders
 - **Location filtering** - Sync only documents from specific locations (new, later, archive, etc.)
 - **Smart conversion** - Uses Microsoft's MarkItDown to convert HTML and PDFs to clean markdown
+- **Obsidian-safe writes** - Only writes files when content has changed, avoiding unnecessary file watcher triggers
 
 ## How It Works
 
@@ -250,6 +251,7 @@ Options:
                               Filter by location
   --flat                      Save all files without category subfolders
   --filename-format TEXT      Filename format (default: {date}-{title}-{id})
+  --force                     Overwrite existing files even if unchanged
   --help                      Show this message and exit
 ```
 

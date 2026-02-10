@@ -1,0 +1,28 @@
+# readersync Development Log
+
+## 2026-02-08 - Obsidian-safe writes and --force flag
+
+**Objective**: Stop readersync from unnecessarily rewriting files on every sync, which was triggering Obsidian's file watcher constantly.
+
+### What We Built
+- Skip-unchanged file writes: markdown files are now compared before writing; if content is identical, the file is left untouched
+- `--force` CLI flag to override skip behaviour and force overwrite when needed
+- Threaded the `force` parameter through CLI -> sync_manager -> markdown_generator
+
+### The Journey
+The user reported that Obsidian was constantly detecting file changes even when readersync hadn't found new content. The root cause was that `generate_markdown()` always wrote to disk regardless of whether the content had changed. Even on incremental syncs, if the API returned a document with a minor metadata update (e.g. reading progress), the tool would regenerate and rewrite an identical file, triggering Obsidian's file watcher.
+
+The fix compares the generated markdown against the existing file content before writing. If they match, the write is skipped entirely. The `--force` flag bypasses this check for cases where a forced regeneration is needed.
+
+### Technical Achievements
+- Content comparison happens after markdown generation but before disk write
+- Graceful fallback: if the existing file can't be read for any reason, it falls back to overwriting
+- Clean integration with existing `--full-sync` flag (full-sync re-fetches from API; `--force` re-writes to disk)
+
+### Key Learnings
+- File watcher sensitivity matters hugely for Obsidian integration - even identical writes trigger re-indexing
+- `--full-sync` and `--force` serve different purposes: one controls API fetching, the other controls disk writing
+
+### Next Steps
+- Monitor whether incremental syncs with the skip-unchanged behaviour work smoothly in production
+- Consider adding a summary count of skipped vs written files at the end of sync

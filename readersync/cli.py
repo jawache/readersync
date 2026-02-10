@@ -52,7 +52,12 @@ load_dotenv()
     help='Filename format template. Placeholders: {date}, {title}, {id}. '
          '{id} is required. Default: {date}-{title}-{id}'
 )
-def main(folder, token, full_sync, tag, category, location, flat, filename_format):
+@click.option(
+    '--force',
+    is_flag=True,
+    help='Overwrite existing files even if unchanged'
+)
+def main(folder, token, full_sync, tag, category, location, flat, filename_format, force):
     """Sync Readwise Reader documents to local markdown files.
 
     This tool downloads your Readwise Reader documents and converts them
@@ -100,7 +105,8 @@ def main(folder, token, full_sync, tag, category, location, flat, filename_forma
             category=category,
             location=location,
             flat=flat,
-            filename_format=filename_format
+            filename_format=filename_format,
+            force=force
         )
     except KeyboardInterrupt:
         print("\n\nSync interrupted by user.")

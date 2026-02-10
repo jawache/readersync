@@ -166,7 +166,8 @@ def generate_markdown(
     content: Optional[str],
     output_folder: str,
     flat: bool = False,
-    filename_format: Optional[str] = None
+    filename_format: Optional[str] = None,
+    force: bool = False
 ) -> str:
     """Generate complete markdown file.
 
@@ -212,7 +213,17 @@ def generate_markdown(
     os.makedirs(category_folder, exist_ok=True)
     filepath = os.path.join(category_folder, filename)
 
-    # Write to file
+    # Only write if content has changed (avoids triggering Obsidian file watcher)
+    if not force and os.path.exists(filepath):
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                existing = f.read()
+            if existing == full_markdown:
+                print(f"  Skipped {filename} (unchanged)")
+                return filepath
+        except Exception:
+            pass  # If we can't read, just overwrite
+
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(full_markdown)
 

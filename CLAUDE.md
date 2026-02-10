@@ -283,7 +283,7 @@ summary: "Brief summary of the document..."
       - Article: Use html_content, convert with markitdown
    c. Find associated highlights (children with matching parent_id)
    d. Generate markdown with frontmatter + highlights + content
-   e. Write/overwrite file
+   e. Compare with existing file; skip write if unchanged (unless --force)
 6. Write current timestamp to .last_sync
 ```
 
@@ -451,6 +451,10 @@ The tool is installed as `readersync` (single word, no hyphens or underscores).
 - `--full-sync` - Ignore .last_sync and fetch all documents
 - `--tag TAG` - Filter by tag
 - `--category CATEGORY` - Filter by category (article, pdf, rss, etc.)
+- `--location LOCATION` - Filter by location (new, later, shortlist, archive, feed)
+- `--flat` - Save files in flat structure (no category subfolders)
+- `--filename-format FORMAT` - Custom filename format with `{date}`, `{title}`, `{id}` placeholders
+- `--force` - Overwrite existing files even if content is unchanged
 
 ### Example Usage
 ```bash
@@ -472,6 +476,15 @@ readersync --tag productivity
 
 # Filter by category
 readersync --category pdf
+
+# Filter by location
+readersync --location archive
+
+# Force overwrite all files
+readersync --force
+
+# Full re-sync with forced overwrite
+readersync --full-sync --force
 ```
 
 ### Installation as Command
