@@ -160,6 +160,83 @@ def generate_highlights_section(highlights: List[Dict]) -> str:
     return "\n".join(lines)
 
 
+# Fields that readersync manages - anything else is user-added
+READERSYNC_FIELDS = {
+    'readwise_id', 'title', 'author', 'url', 'source_url', 'category',
+    'location', 'tags', 'site_name', 'word_count', 'reading_progress',
+    'cover', 'date', 'created_at', 'saved_at', 'updated_at',
+    'published_date', 'summary',
+}
+
+
+def _merge_custom_frontmatter(existing_filepath: str, new_markdown: str) -> str:
+    """Preserve user-added frontmatter fields when overwriting a file.
+
+    Reads the existing file, extracts any frontmatter fields that readersync
+    doesn't manage, and merges them into the new markdown.
+
+    Args:
+        existing_filepath: Path to the existing markdown file
+        new_markdown: The newly generated markdown content
+
+    Returns:
+        Markdown with custom frontmatter fields preserved
+    """
+    try:
+        with open(existing_filepath, 'r', encoding='utf-8') as f:
+            existing_content = f.read()
+    except Exception:
+        return new_markdown
+
+    # Parse existing frontmatter
+    if not existing_content.startswith('---\n'):
+        return new_markdown
+
+    end_idx = existing_content.find('\n---\n', 4)
+    if end_idx == -1:
+        return new_markdown
+
+    existing_yaml_str = existing_content[4:end_idx]
+    try:
+        existing_meta = yaml.safe_load(existing_yaml_str)
+    except Exception:
+        return new_markdown
+
+    if not isinstance(existing_meta, dict):
+        return new_markdown
+
+    # Find custom fields (not managed by readersync)
+    custom_fields = {k: v for k, v in existing_meta.items() if k not in READERSYNC_FIELDS}
+    if not custom_fields:
+        return new_markdown
+
+    # Parse new frontmatter and inject custom fields
+    if not new_markdown.startswith('---\n'):
+        return new_markdown
+
+    new_end_idx = new_markdown.find('\n---\n', 4)
+    if new_end_idx == -1:
+        return new_markdown
+
+    new_yaml_str = new_markdown[4:new_end_idx]
+    try:
+        new_meta = yaml.safe_load(new_yaml_str)
+    except Exception:
+        return new_markdown
+
+    if not isinstance(new_meta, dict):
+        return new_markdown
+
+    # Merge custom fields into new metadata
+    new_meta.update(custom_fields)
+
+    # Rebuild frontmatter
+    yaml_str = yaml.dump(new_meta, default_flow_style=False, allow_unicode=True, sort_keys=False, width=10000)
+    rest_of_content = new_markdown[new_end_idx + 5:]  # skip \n---\n
+
+    return f"---\n{yaml_str}---\n{rest_of_content}"
+
+
 def generate_markdown(
     document: Dict,
     highlights: List[Dict],
@@ -213,16 +290,14 @@ def generate_markdown(
     os.makedirs(category_folder, exist_ok=True)
     filepath = os.path.join(category_folder, filename)
 
-    # Only write if content has changed (avoids triggering Obsidian file watcher)
-    if not force and os.path.exists(filepath):
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                existing = f.read()
-            if existing == full_markdown:
-                print(f"  Skipped {filename} (unchanged)")
-                return filepath
-        except Exception:
-            pass  # If we can't read, just overwrite
+    # Default: skip if file already exists (avoids triggering Obsidian file watcher)
+    if os.path.exists(filepath):
+        if not force:
+            print(f"  Skipped {filename} (already exists)")
+            return filepath
+
+        # --force: overwrite but preserve any custom frontmatter fields
+        full_markdown = _merge_custom_frontmatter(filepath, full_markdown)
 
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(full_markdown)
