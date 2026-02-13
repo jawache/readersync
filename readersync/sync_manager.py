@@ -178,8 +178,7 @@ def sync(
     print(f"  Errors: {error_count}")
     print("=" * 60)
 
-    # Write timestamp only if sync was successful
-    if error_count == 0:
-        write_last_sync(folder)
-    else:
-        print("\nWARNING: Not updating last sync timestamp due to errors")
+    # Always write last sync timestamp so subsequent runs are incremental.
+    # Failed documents will be retried on next sync since they'll still
+    # show as updated in the API.
+    write_last_sync(folder)
